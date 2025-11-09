@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- 기존 배경색과 동일하게 설정합니다 -->
+    <solid android:color="@color/light_gray" />
+
+    <!--
+      상단 왼쪽(topLeft)과 상단 오른쪽(topRight)에만
+      16dp의 둥근 모서리를 적용합니다. (값은 조절 가능)
+    -->
+    <corners
+        android:topLeftRadius="16dp"
+        android:topRightRadius="16dp"
+        android:bottomLeftRadius="0dp"
+        android:bottomRightRadius="0dp" />
+</shape>
