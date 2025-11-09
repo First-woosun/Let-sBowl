@@ -13,10 +13,124 @@
         android:layout_marginStart="8dp"
         android:layout_marginTop="8dp"
         android:layout_marginEnd="8dp"
-        android:textAlignment="center"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:textSize="40sp"
+        android:textStyle="bold"
+        android:textColor="@color/light_blue_700"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        android:text="@string/weekly_average_label" />
+
+    <LinearLayout
+        android:id="@+id/average_score_layout"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/rounded_top_corners"
+        app:layout_constraintTop_toBottomOf="@+id/text_home"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- 첫 번째 TextView (예: "평균 점수" 레이블) -->
+        <TextView
+            android:id="@+id/text_average_value"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="0"
+            android:textSize="50sp"
+            android:textStyle="bold"
+            android:gravity="end|center_vertical"
+            tools:textColor="@android:color/black" />
+
+        <!-- 두 번째 TextView (예: 실제 평균 점수 값) -->
+        <TextView
+            android:id="@+id/text_average_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text = "AVG"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            android:gravity="start|center_vertical"
+            tools:textColor="@android:color/black" />
+
+    </LinearLayout>
+
+    <!-- 💡 이 부분이 추가되었는지 확인하세요! -->
+    <!-- ID가 "lineChart" 여야 합니다. -->
+    <com.github.mikephil.charting.charts.LineChart
+        android:id="@+id/lineChart"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/rounded_bottom_corners"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/average_score_layout" />
+
+    <Button
+        android:id="@+id/add_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/add_new_game"
+        android:textColor="@color/white"
+        android:textSize="16dp"
+        android:textStyle="bold"
+
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.9"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lineChart" />
+
+    <LinearLayout
+        android:id="@+id/max_score_layout"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/rounded_background"
+        android:backgroundTint="@color/light_gray"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/lineChart">
+
+        <!-- 첫 번째 TextView (예: "평균 점수" 레이블) -->
+
+        <!-- 두 번째 TextView (예: 실제 평균 점수 값) -->
+        <TextView
+            android:id="@+id/text_max_value"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end|center_vertical"
+            android:text="@string/high_game"
+            android:textSize="25sp"
+            android:textStyle="bold"
+            tools:textColor="@android:color/black" />
+
+        <TextView
+            android:id="@+id/text_max_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="2"
+            android:gravity="start|center_vertical"
+            android:text="@string/zero_value"
+            android:textSize="50sp"
+            android:textStyle="bold"
+            tools:textColor="@android:color/black" />
+
+    </LinearLayout>
+
+
 </androidx.constraintlayout.widget.ConstraintLayout>
