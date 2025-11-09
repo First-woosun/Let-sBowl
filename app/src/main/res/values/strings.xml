@@ -1,6 +1,10 @@
 <resources>
     <string name="app_name">Let\'sBowl</string>
-    <string name="title_home">Home</string>
-    <string name="title_dashboard">Dashboard</string>
-    <string name="title_notifications">Notifications</string>
+    <string name="title_home">내 게임</string>
+    <string name="title_dashboard">용품점</string>
+    <string name="title_notifications">알람</string>
+    <string name="weekly_average_label">주간 에버리지</string>
+    <string name="add_new_game">게임 등록</string>
+    <string name="high_game">high</string>
+    <string name="zero_value">0</string>
 </resources>
