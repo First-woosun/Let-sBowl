@@ -109,7 +109,7 @@
 
         <!-- 두 번째 TextView (예: 실제 평균 점수 값) -->
         <TextView
-            android:id="@+id/text_max_value"
+            android:id="@+id/text_max_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -120,7 +120,7 @@
             tools:textColor="@android:color/black" />
 
         <TextView
-            android:id="@+id/text_max_label"
+            android:id="@+id/text_max_value"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
