@@ -2,9 +2,11 @@ package com.example.letsbowl.ui.home
 
 import android.app.DatePickerDialog
 import android.app.Dialog
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.View
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -13,55 +15,51 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.example.letsbowl.data.Game
 import com.example.letsbowl.R
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
 class AddGameDialogFragment : DialogFragment() {
 
-    // 1. 리스너 인터페이스 변경: 점수 "목록"을 전달
-    interface AddGameDialogListener {
-        fun onGamesAdded(dateMillis: Long, scores: List<Int>)
-    }
-
-    private var listener: AddGameDialogListener? = null
     private val selectedCalendar = Calendar.getInstance()
-
-    // 점수 입력 뷰들을 담을 부모 레이아웃
     private var scoresContainer: LinearLayout? = null
-    // 인플레이터
     private var inflater: LayoutInflater? = null
 
+    // HomeFragment와 ViewModel을 공유
+    private val homeViewModel: HomeViewModel by lazy {
+        val factory = HomeViewModelFactory(requireActivity().application)
+        ViewModelProvider(requireParentFragment(), factory).get(HomeViewModel::class.java)
+    }
+
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        try {
-            listener = parentFragment as AddGameDialogListener
-        } catch (e: ClassCastException) {
-            throw ClassCastException((parentFragment.toString() + " must implement AddGameDialogListener"))
-        }
 
         inflater = requireActivity().layoutInflater
         val builder = AlertDialog.Builder(requireActivity())
         val view = inflater!!.inflate(R.layout.dialog_add_game, null)
 
-        // 뷰 초기화
         val textSelectedDate = view.findViewById<TextView>(R.id.text_selected_date)
         val buttonAddScoreView = view.findViewById<Button>(R.id.button_add_score_view)
         val buttonCancel = view.findViewById<Button>(R.id.button_cancel)
         val buttonSave = view.findViewById<Button>(R.id.button_save)
-        scoresContainer = view.findViewById(R.id.container_scores) // 컨테이너 초기화
+        scoresContainer = view.findViewById(R.id.container_scores)
 
-        // 날짜 선택 텍스트뷰 초기값
         updateDateText(textSelectedDate)
 
-        // 날짜 선택 리스너
+        // 날짜 선택 리스너 (키보드 숨기기 포함)
         textSelectedDate.setOnClickListener {
+            hideKeyboard()
             showDatePicker(textSelectedDate)
         }
 
-        // 2. "+" (게임 추가) 버튼 리스너
+        // "+" (게임 추가) 버튼 리스너
         buttonAddScoreView.setOnClickListener {
-            addScoreView() // 점수 입력 뷰 추가
+            val newEditText = addScoreView(null)
+            newEditText?.let { showKeyboard(it) }
         }
 
         // 취소 버튼
@@ -69,78 +67,115 @@ class AddGameDialogFragment : DialogFragment() {
             dismiss()
         }
 
-        // 3. "입력" (저장) 버튼 리스너
+        //입력 버튼 리스너
         buttonSave.setOnClickListener {
             val scores = mutableListOf<Int>()
             var allScoresValid = true
 
-            // 4. 컨테이너 내의 모든 점수 뷰를 순회하며 값 수집
             for (i in 0 until (scoresContainer?.childCount ?: 0)) {
                 val scoreView = scoresContainer?.getChildAt(i)
                 val editScore = scoreView?.findViewById<EditText>(R.id.edit_score_item)
                 val scoreString = editScore?.text.toString()
 
                 if (scoreString.isNotEmpty()) {
-                    val score = scoreString.toInt()
-                    if (score in 0..300) {
+                    val score = scoreString.toIntOrNull()
+
+                    if (score != null && score in 0..300) {
                         scores.add(score)
                     } else {
-                        // 유효성 검사 실패
                         editScore?.error = "0-300 사이"
                         allScoresValid = false
                     }
-                } else {
-                    // 비어있는 필드가 있으면 안됨
-                    editScore?.error = "점수 입력"
-                    allScoresValid = false
                 }
             }
 
-            if (scores.isEmpty()) {
-                Toast.makeText(context, "최소 1개 이상의 점수를 입력하세요.", Toast.LENGTH_SHORT).show()
-                // 최소 1개는 있어야 한다면, 여기서 addScoreView()를 호출해둘 수 있습니다.
-                return@setOnClickListener
-            }
-
+            // 유효성 검사
             if (allScoresValid) {
-                // 모든 점수가 유효하면 리스너로 전달
-                listener?.onGamesAdded(selectedCalendar.timeInMillis, scores)
+                homeViewModel.saveGamesForDate(selectedCalendar.timeInMillis, scores)
                 dismiss()
             } else {
                 Toast.makeText(context, "유효하지 않은 점수가 있습니다.", Toast.LENGTH_SHORT).show()
             }
         }
 
-        // 5. 다이얼로그가 처음 뜰 때 기본으로 1개의 점수 입력란을 추가
-        addScoreView()
+        val initialEditText = addScoreView(null)
+        loadDataForDate(selectedCalendar.timeInMillis) // 비동기 로드
 
         builder.setView(view)
-        return builder.create()
-    }
+        val dialog = builder.create()
 
-    // 6. 점수 입력 뷰를 동적으로 추가하는 함수
-    private fun addScoreView() {
-        if (inflater == null || scoresContainer == null) return
-
-        val scoreView = inflater!!.inflate(R.layout.item_game_score, scoresContainer, false)
-
-        val buttonRemove = scoreView.findViewById<ImageButton>(R.id.button_remove_item)
-        buttonRemove.setOnClickListener {
-            // "x" 버튼 클릭 시 해당 뷰 삭제
-            scoresContainer?.removeView(scoreView)
+        initialEditText?.let {
+            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+            showKeyboard(it)
         }
 
-        scoresContainer?.addView(scoreView)
+        return dialog
     }
 
-    // 날짜 선택 다이얼로그 (이전과 동일)
+    //키보드를 숨기는 함수
+    private fun hideKeyboard() {
+
+        val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+        imm?.hideSoftInputFromWindow(dialog?.window?.currentFocus?.windowToken, 0)
+    }
+
+    //해당 날자에 먼저 저장되어있던 점수 load
+    private fun loadDataForDate(dateMillis: Long) {
+
+        lifecycleScope.launch {
+            val games: List<Game> = homeViewModel.getGamesForDate(dateMillis)
+
+            scoresContainer?.removeAllViews()
+
+            if (games.isNotEmpty()) {
+                games.forEach { game ->
+                    addScoreView(game.score)
+                }
+            } else {
+                addScoreView(null)
+            }
+        }
+    }
+    
+    //점수 입력 EditTextView 추가 메서드
+    private fun addScoreView(score: Int?): EditText? {
+        if (inflater == null || scoresContainer == null) return null
+
+        val scoreView = inflater!!.inflate(R.layout.item_game_score, scoresContainer, false)
+        val editScore = scoreView.findViewById<EditText>(R.id.edit_score_item)
+        val buttonRemove = scoreView.findViewById<ImageButton>(R.id.button_remove_item)
+
+        if (score != null) {
+            editScore.setText(score.toString())
+        }
+
+        buttonRemove.setOnClickListener {
+            scoresContainer?.removeView(scoreView)
+        }
+        scoresContainer?.addView(scoreView)
+
+        return editScore
+    }
+    
+    //키보드를 화면에 표시하는 함수
+    private fun showKeyboard(editText: EditText) {
+        editText.post {
+            editText.requestFocus()
+            val imm = context?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+            imm?.showSoftInput(editText, InputMethodManager.SHOW_IMPLICIT)
+        }
+    }
+
+    //날자 선택 다이얼로그
     private fun showDatePicker(dateTextView: TextView) {
         val cal = selectedCalendar
         val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
             cal.set(Calendar.YEAR, year)
             cal.set(Calendar.MONTH, month)
             cal.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+
             updateDateText(dateTextView)
+            loadDataForDate(cal.timeInMillis)
         }
 
         DatePickerDialog(
@@ -152,7 +187,7 @@ class AddGameDialogFragment : DialogFragment() {
         ).show()
     }
 
-    // 날짜 텍스트 업데이트 (이전과 동일)
+    //날자 텍스트 업데이트
     private fun updateDateText(dateTextView: TextView) {
         val format = "yyyy년 MM월 dd일"
         val sdf = SimpleDateFormat(format, Locale.KOREA)
