@@ -3,6 +3,7 @@ package com.example.letsbowl.data
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -20,4 +21,21 @@ interface GameDao {
     //game_table에 저장된 최고 점수 조회
     @Query("SELECT MAX(score) FROM games_table")
     fun getHighScore(): Flow<Int>
+
+    //game_table에 저장된 특정 날자의 게임을 조회
+    @Query("SELECT * FROM games_table WHERE date_millis = :dateMillis")
+    suspend fun getGamesForDate(dateMillis: Long): List<Game>
+
+    //game_table에 저장된 특정 날자의 게임을 모두 삭제
+    @Query("DELETE FROM games_table WHERE date_millis = :dateMillis")
+    suspend fun deleteGamesForDate(dateMillis: Long)
+
+    @Transaction
+    suspend fun replaceGamesForDate(inputDateMillis: Long, scores: List<Int>){
+        deleteGamesForDate(inputDateMillis)
+
+        scores.forEach { score ->
+            insertGame(Game(dateMillis = inputDateMillis, score = score))
+        }
+    }
 }
