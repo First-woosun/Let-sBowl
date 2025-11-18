@@ -1,5 +1,6 @@
 package com.example.letsbowl.ui.home
 
+import android.icu.util.Calendar
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.asLiveData
@@ -19,5 +20,32 @@ class HomeViewModel(private val repository: GameRepository): ViewModel() {
                 repository.insert(newGame)
             }
         }
+    }
+
+    //날자 값 정규화
+    private fun getNormalizedDate(dateMillis: Long): Long{
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = dateMillis
+
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.timeInMillis
+    }
+
+    // 날자값을 기준으로 게임 점수를 저장
+    fun saveGamesForDate(dateMillis: Long, scores: List<Int>){
+        viewModelScope.launch {
+            val normalizedDate = getNormalizedDate(dateMillis)
+            repository.replaceGamesForDate(normalizedDate, scores)
+        }
+    }
+
+    // 날자값을 기준으로 게임 점수를 load
+    suspend fun getGamesForDate(dateMillis: Long): List<Game>{
+        val normalizedDate = getNormalizedDate(dateMillis)
+        return repository.getGamesForDate(normalizedDate)
     }
 }
